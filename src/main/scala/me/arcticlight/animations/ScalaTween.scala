@@ -1,7 +1,8 @@
 package me.arcticlight.animations
+import scala.language.implicitConversions
 
 object ScalaTween {
-  trait TweenOps[T <: TweenOps[T]] {
+  trait TweenOps[T <: TweenOps[T]]  {
     /**
      * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
      * @param fraction A [[Float]] value between 0 and 1, inclusive
@@ -25,16 +26,26 @@ object ScalaTween {
 
     /**
      * Perform linear interpolation using TweenOps.
+     * @param other the other TweenOps with which to lerp
      */
-    def lerp(other: T, fraction: Float): T = {
-      this * fraction + other * (1-fraction)
-    }
+    def lerp(other: T, fraction: Float): T
+      = this * fraction + other * (1-fraction)
 
-    def lease(other: T, fraction: Float, fease: (Float) => Float) = {
-      this + (other - this) * fease(fraction)
-    }
+    def lease(other: T, fraction: Float, fease: (Float) => Float): T
+      = this + (other - this) * fease(fraction)
   }
-
+  implicit def unwrapTweenOps[T <: TweenOps[T]](ops: TweenOps[T]): T = ops
+  implicit def floatToTwops(float: Float): TweenOps[FloatWithTwops]
+    = FloatWithTwops(float)
+  implicit def removeTwops(twops: FloatWithTwops): Float = twops.float
+  final case class FloatWithTwops(float: Float) extends TweenOps[FloatWithTwops] {
+    def *(fraction: Float): FloatWithTwops
+      = FloatWithTwops(float * fraction)
+    def +(other: FloatWithTwops): FloatWithTwops
+      = FloatWithTwops(float * other)
+    def -(other: FloatWithTwops): FloatWithTwops
+      = FloatWithTwops(float - other)
+  }
   class AnimationTarget[T <: TweenOps[T]](var value: T) {
   }
 }
