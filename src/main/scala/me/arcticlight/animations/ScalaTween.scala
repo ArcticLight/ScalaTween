@@ -14,14 +14,14 @@ object ScalaTween {
      * @param other Another [[T]] to add to this one
      * @return The result of adding together `this` and `other`
      */
-    def +[B <: TweenOps[B]](other: TweenOps[B]): A
+    def +(other: TweenOps[_]): A
 
     /**
      * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
      * @param other Another [[T]] to subtract from this one
      * @return The result of subtracting `other` from `this`
      */
-    def -[B <: TweenOps[B]](other: TweenOps[B]): A
+    def -(other: TweenOps[_]): A
 
     /**
      * Perform linear interpolation using TweenOps.
