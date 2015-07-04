@@ -35,15 +35,15 @@ object ScalaTween {
       = this + (other - this) * fease(fraction)
   }
   implicit def unwrapTweenOps[T <: TweenOps[T]](ops: TweenOps[T]): T = ops
-  implicit def removeTwops(twops: FloatWithTwops): Float = twops.float
-  implicit class FloatWithTwops(val float: Float)
-  extends TweenOps[FloatWithTwops] {
-    def *(fraction: Float): FloatWithTwops
-      = float * fraction
-    def +(other: FloatWithTwops): FloatWithTwops
-      = float * other
-    def -(other: FloatWithTwops): FloatWithTwops
-      = float - other
+  implicit def detwopsNumeric[A](twops: TwopsyNumeric[A]): A = twops.value
+  implicit class TwopsyNumeric[A](val value: A)(implicit num: Numeric[A])
+  extends TweenOps[TwopsyNumeric[A]] {
+    def *(fraction: Float): TwopsyNumeric[A]
+      = value * fraction
+    def +(other: TwopsyNumeric[A]): TwopsyNumeric[A]
+      = value + other
+    def -(other: TwopsyNumeric[A]): TwopsyNumeric[A]
+      = value - other
   }
   class AnimationTarget[T <: TweenOps[T]](var value: T) {
   }
