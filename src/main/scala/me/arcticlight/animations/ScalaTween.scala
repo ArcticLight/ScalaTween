@@ -36,14 +36,27 @@ object ScalaTween {
   }
   implicit def unwrapTweenOps[T <: TweenOps[T]](ops: TweenOps[T]): T = ops
   implicit def detwopsNumeric[A](twops: TwopsyNumeric[A]): A = twops.value
-  implicit class TwopsyNumeric[A](val value: A)(implicit num: Numeric[A])
+
+  /**
+   * Implicitly adds [[TweenOps]][A] to any `A` with [[Numeric]].
+   *
+   * This is possible because any typeclass implementing [[Numeric]] should
+   * already have `+`, `-`, and `*` operations that [[TweenOps]] can use.
+   *
+   * @param value the underlying numeric value
+   * @tparam A a type extending [[Numeric]]
+   * @author Hawk Weisman
+   */
+  implicit class TwopsyNumeric[A : Numeric](val value: A)
   extends TweenOps[TwopsyNumeric[A]] {
-    def *(fraction: Float): TwopsyNumeric[A]
+
+    override def *(fraction: Float): TwopsyNumeric[A]
       = value * fraction
-    def +(other: TwopsyNumeric[A]): TwopsyNumeric[A]
+    override def +(other: TwopsyNumeric[A]): TwopsyNumeric[A]
       = value + other
-    def -(other: TwopsyNumeric[A]): TwopsyNumeric[A]
+    override def -(other: TwopsyNumeric[A]): TwopsyNumeric[A]
       = value - other
+
   }
   class AnimationTarget[T <: TweenOps[T]](var value: T) {
   }
