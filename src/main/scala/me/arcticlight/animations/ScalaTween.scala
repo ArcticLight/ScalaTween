@@ -1,4 +1,5 @@
 package me.arcticlight.animations
+import scala.language.implicitConversions
 
 object ScalaTween {
   trait TweenOps[T <: TweenOps[T]] {
@@ -34,7 +35,7 @@ object ScalaTween {
       this + (other - this) * fease(fraction)
     }
   }
-
+  implicit def unwrapTweenOps[T <: TweenOps[T]](ops: TweenOps[T]): T = ops
   class AnimationTarget[T <: TweenOps[T]](var value: T) {
   }
 }
