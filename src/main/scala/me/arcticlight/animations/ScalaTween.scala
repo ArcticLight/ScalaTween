@@ -38,7 +38,7 @@ object ScalaTween {
     def lerp[B <: TweenOps[B]](other: TweenOps[B], fraction: Float): A
       = this * fraction + other * (1-fraction)
 
-    def lease[B <: TweenOps[B]](other: TweenOps[B], fraction: Float, fease: (Float) => Float)
+    def lease[B <: TweenOps[B]](other: TweenOps[B], fraction: Float, fease: (Float) => Float): A
       = this + (other - this) * fease(fraction)
   }
 
