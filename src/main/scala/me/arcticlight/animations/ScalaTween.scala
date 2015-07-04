@@ -2,6 +2,7 @@ package me.arcticlight.animations
 
 object ScalaTween {
   trait TweenOps[A <: TweenOps[A]]  {
+    type B = TweenOps[T] forSome { type T <: TweenOps[T] }
 
     // note that + and - used to have [B <: TweenOps[B]] type bounds
     // and take params of type TweenOps[B]. These type bounds may need
@@ -35,10 +36,10 @@ object ScalaTween {
      * @tparam B a type implementing TweenOps
      * @param other the other TweenOps with which to lerp
      */
-    def lerp[B <: TweenOps[B]](other: TweenOps[B], fraction: Float): A
+    def lerp(other: B, fraction: Float): A
       = this * fraction + other * (1-fraction)
 
-    def lease[B <: TweenOps[B]](other: TweenOps[B], fraction: Float, fease: (Float) => Float): A
+    def lease(other: B, fraction: Float, fease: (Float) => Float): A
       = this + (other - this) * fease(fraction)
   }
 
