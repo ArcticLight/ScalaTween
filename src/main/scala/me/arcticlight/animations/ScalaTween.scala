@@ -2,48 +2,50 @@ package me.arcticlight.animations
 import scala.language.implicitConversions
 
 object ScalaTween {
-  trait TweenOps[A <: TweenOps[A]]  {
-    type B = TweenOps[T] forSome { type T <: TweenOps[T] }
-
-    // note that + and - used to have [B <: TweenOps[B]] type bounds
-    // and take params of type TweenOps[B]. These type bounds may need
-    // to be re-introduced if implementors of TweenOps need to be able
-    // to prove type stuff about right-hand sides.
-    //    – Hawk, 3 July 2015
-
+  trait TweenOps[T <: TweenOps[T]]  {
     /**
      * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
      * @param fraction A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
      */
-    def *(fraction: Float): A
+    def *(fraction: Float): T
 
     /**
      * Add (Tween operation) adds together this object and the parameter and returns the result
      * @param other Another [[T]] to add to this one
      * @return The result of adding together `this` and `other`
      */
-    def +(other: TweenOps[_]): A
+    def +(other: T): T
 
     /**
      * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
      * @param other Another [[T]] to subtract from this one
      * @return The result of subtracting `other` from `this`
      */
-    def -(other: TweenOps[_]): A
+    def -(other: T): T
 
     /**
      * Perform linear interpolation using TweenOps.
-     * @tparam B a type implementing TweenOps
      * @param other the other TweenOps with which to lerp
      */
-    def lerp(other: B, fraction: Float): A
+    def lerp(other: T, fraction: Float): T
       = this * fraction + other * (1-fraction)
 
-    def lease(other: B, fraction: Float, fease: (Float) => Float): A
+    def lease(other: T, fraction: Float, fease: (Float) => Float): T
       = this + (other - this) * fease(fraction)
   }
   implicit def unwrapTweenOps[T <: TweenOps[T]](ops: TweenOps[T]): T = ops
+  implicit def floatToTwops(float: Float): TweenOps[FloatWithTwops]
+    = FloatWithTwops(float)
+  implicit def removeTwops(twops: FloatWithTwops): Float = twops.float
+  final case class FloatWithTwops(float: Float) extends TweenOps[FloatWithTwops] {
+    def *(fraction: Float): FloatWithTwops
+      = FloatWithTwops(float * fraction)
+    def +(other: FloatWithTwops): FloatWithTwops
+      = FloatWithTwops(float * other)
+    def -(other: FloatWithTwops): FloatWithTwops
+      = FloatWithTwops(float - other)
+  }
   class AnimationTarget[T <: TweenOps[T]](var value: T) {
   }
 }
