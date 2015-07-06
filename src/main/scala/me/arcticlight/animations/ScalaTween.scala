@@ -1,137 +1,56 @@
 package me.arcticlight.animations
+
+import me.arcticlight.animations.TweenOps.FloatHasTweenOps
+
 import scala.language.implicitConversions
 
 object ScalaTween {
-
-  trait TweenOps[T]  {
+  class AnimationTarget[A : TweenOps](var value: A)
+  extends TweenOps[A] {
     /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
+     * Scalar multiply (Tween operation) multiplies this value by a fraction
+     * and returns the result
      * @param a The value to multiply
      * @param f A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
      */
-    def mult(a: T, f: Float): T
+    override def mult[B : Fractional](a: A, b: B): A
+      = implicitly[TweenOps[A]].mult(a,b)
 
     /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
-     * @param a The first value to work with
-     * @param b Another [[T]] to add to this one
-     * @return The result of adding together `a` and `b`
-     */
-    def add(a: T, b: T): T
-
-    /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
+     * Subtract (Tween operation) subtracts the parameter from this object
+     * and returns the result.
      * @param a The first value to work with
      * @param b Another [[T]] to subtract from this one
      * @return The result of subtracting `b` from `a`
      */
-    def subt(a: T, b: T): T
+    override def subt(a: A, b: A): A
+      = implicitly[TweenOps[A]].subt(a,b)
 
     /**
-     * Perform linear interpolation using TweenOps.
-     * @param a The value to start with
-     * @param b the other [[T]] with which to lerp to
-     */
-    def lerp(a: T, b: T, fraction: Float): T
-      = add(a, mult(subt(b,a), fraction))
-
-    def withEase(ease: (Float) => Float): WithEase = new WithEase(ease)
-
-    class WithEase(ease: (Float) => Float) extends TweenOps[T] {
-      /**
-       * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
-       * @param a The value to multiply
-       * @param f A [[Float]] value between 0 and 1, inclusive
-       * @return a T scaled by multiplying it with the scalar `f` amount
-       */
-      override def mult(a: T, f: Float): T = TweenOps.this.mult(a,f)
-
-      /**
-       * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
-       * @param a The first value to work with
-       * @param b Another [[T]] to subtract from this one
-       * @return The result of subtracting `b` from `a`
-       */
-      override def subt(a: T, b: T): T = TweenOps.this.subt(a,b)
-
-      /**
-       * Add (Tween operation) adds together this object and the parameter and returns the result
-       * @param a The first value to work with
-       * @param b Another [[T]] to add to this one
-       * @return The result of adding together `a` and `b`
-       */
-      override def add(a: T, b: T): T = TweenOps.this.add(a,b)
-
-      override def lerp(a: T, b: T, f: Float): T = add(a, mult(subt(b,a), ease(f)))
-    }
-  }
-
-  implicit class FloatHasTweenOps(value: Float) extends TweenOps[Float] {
-    /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
-     * @param a The value to multiply
-     * @param f A [[Float]] value between 0 and 1, inclusive
-     * @return a T scaled by multiplying it with the scalar `fraction` amount
-     */
-    override def mult(a: Float, f: Float): Float = a * f
-
-    /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
-     * @param a The first value to work with
-     * @param b Another [[Float]] to subtract from this one
-     * @return The result of subtracting `b` from `a`
-     */
-    override def subt(a: Float, b: Float): Float = a * b
-
-    /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
-     * @param a The first value to work with
-     * @param b Another [[Float]] to add to this one
-     * @return The result of adding together `this` and `other`
-     */
-    override def add(a: Float, b: Float): Float = a + b
-  }
-
-  class AnimationTarget[T](var value: T)(implicit to: TweenOps[T]) extends TweenOps[T] {
-    /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
-     * @param a The value to multiply
-     * @param f A [[Float]] value between 0 and 1, inclusive
-     * @return a T scaled by multiplying it with the scalar `fraction` amount
-     */
-    override def mult(a: T, f: Float): T = to.mult(a,f)
-
-    /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
-     * @param a The first value to work with
-     * @param b Another [[T]] to subtract from this one
-     * @return The result of subtracting `b` from `a`
-     */
-    override def subt(a: T, b: T): T = to.subt(a,b)
-
-    /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
+     * Add (Tween operation) adds together this object and the parameter
+     * and returns the result
      * @param a The first value to work with
      * @param b Another [[T]] to add to this one
      * @return The result of adding together `a` and `b`
      */
-    override def add(a: T, b: T): T = to.add(a,b)
+    override def add(a: A, b: A): A
+      = implicitly[TweenOps[A]].add(a,b)
 
-    def +(b: T): T = add(this.value, b)
-    def -(b: T): T = subt(this.value,b)
-    def *(f: Float): T = mult(this.value, f)
+    def +(b: A): A = add(this.value, b)
+    def -(b: A): A = subt(this.value,b)
+    def *[B : Fractional](b: B): A = mult(this.value, b)
 
-    def +=(b: T): Unit = {
+    def +=(b: A): Unit = {
       this.value = add(this.value, b)
     }
 
-    def -=(b: T): Unit = {
+    def -=(b: A): Unit = {
       this.value = subt(this.value, b)
     }
 
-    def *=(f: Float): Unit = {
-      this.value = mult(this.value,f)
+    def *=[B : Fractional](b: B): Unit = {
+      this.value = mult(this.value,b)
     }
   }
 
