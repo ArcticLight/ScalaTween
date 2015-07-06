@@ -141,8 +141,8 @@ object ScalaTween {
   //     = implicitly[Fractional[A]].plus(a,b)
   // }
 
-  class AnimationTarget[T : TweenOps](var value: T)
-  extends TweenOps[T] {
+  class AnimationTarget[A : TweenOps](var value: A)
+  extends TweenOps[A] {
     /**
      * Scalar multiply (Tween operation) multiplies this value by a fraction
      * and returns the result
@@ -151,7 +151,7 @@ object ScalaTween {
      * @return a T scaled by multiplying it with the scalar `fraction` amount
      */
     override def mult[B : Fractional](a: T, b: B): T
-      = implicitly[TweenOps[T]].mult(a,b)
+      = implicitly[TweenOps[A]].mult(a,b)
 
     /**
      * Subtract (Tween operation) subtracts the parameter from this object
@@ -160,8 +160,8 @@ object ScalaTween {
      * @param b Another [[T]] to subtract from this one
      * @return The result of subtracting `b` from `a`
      */
-    override def subt(a: T, b: T): T
-      = implicitly[TweenOps[T]].subt(a,b)
+    override def subt(a: A, b: A): A
+      = implicitly[TweenOps[A]].subt(a,b)
 
     /**
      * Add (Tween operation) adds together this object and the parameter
@@ -170,18 +170,18 @@ object ScalaTween {
      * @param b Another [[T]] to add to this one
      * @return The result of adding together `a` and `b`
      */
-    override def add(a: T, b: T): T
-      = implicitly[TweenOps[T]].add(a,b)
+    override def add(a: A, b: A): A
+      = implicitly[TweenOps[A]].add(a,b)
 
-    def +(b: T): T = add(this.value, b)
-    def -(b: T): T = subt(this.value,b)
-    def *[B : Fractional](b: B): T = mult(this.value, b)
+    def +(b: A): A = add(this.value, b)
+    def -(b: A): A = subt(this.value,b)
+    def *[B : Fractional](b: B): A = mult(this.value, b)
 
-    def +=(b: T): Unit = {
+    def +=(b: A): Unit = {
       this.value = add(this.value, b)
     }
 
-    def -=(b: T): Unit = {
+    def -=(b: A): Unit = {
       this.value = subt(this.value, b)
     }
 
