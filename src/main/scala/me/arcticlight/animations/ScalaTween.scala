@@ -67,7 +67,8 @@ object ScalaTween {
     }
   }
 
-  implicit class FloatHasTweenOps(value: Float) extends TweenOps[Float] {
+  implicit object FloatHasTweenOps
+  extends TweenOps[Float] {
     /**
      * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
      * @param a The value to multiply
