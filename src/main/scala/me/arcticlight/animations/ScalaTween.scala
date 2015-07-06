@@ -5,7 +5,8 @@ object ScalaTween {
 
   trait TweenOps[T]  {
     /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
+     * Scalar multiply (Tween operation) multiplies this value by a fraction
+     * and returns the result
      * @param a The value to multiply
      * @param f A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
@@ -13,7 +14,8 @@ object ScalaTween {
     def mult(a: T, f: Float): T
 
     /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
+     * Add (Tween operation) adds together this object and the parameter and
+     * returns the result
      * @param a The first value to work with
      * @param b Another [[T]] to add to this one
      * @return The result of adding together `a` and `b`
@@ -21,7 +23,8 @@ object ScalaTween {
     def add(a: T, b: T): T
 
     /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
+     * Subtract (Tween operation) subtracts the parameter from this object
+     * and returns the result.
      * @param a The first value to work with
      * @param b Another [[T]] to subtract from this one
      * @return The result of subtracting `b` from `a`
@@ -40,7 +43,8 @@ object ScalaTween {
 
     class WithEase(ease: (Float) => Float) extends TweenOps[T] {
       /**
-       * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
+       * Scalar multiply (Tween operation) multiplies this value by a fraction
+       * and returns the result
        * @param a The value to multiply
        * @param f A [[Float]] value between 0 and 1, inclusive
        * @return a T scaled by multiplying it with the scalar `f` amount
@@ -48,7 +52,8 @@ object ScalaTween {
       override def mult(a: T, f: Float): T = TweenOps.this.mult(a,f)
 
       /**
-       * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
+       * Subtract (Tween operation) subtracts the parameter from this object
+       * and returns the result.
        * @param a The first value to work with
        * @param b Another [[T]] to subtract from this one
        * @return The result of subtracting `b` from `a`
@@ -56,20 +61,23 @@ object ScalaTween {
       override def subt(a: T, b: T): T = TweenOps.this.subt(a,b)
 
       /**
-       * Add (Tween operation) adds together this object and the parameter and returns the result
+       * Add (Tween operation) adds together this object and the parameter
+       * and returns the result
        * @param a The first value to work with
        * @param b Another [[T]] to add to this one
        * @return The result of adding together `a` and `b`
        */
       override def add(a: T, b: T): T = TweenOps.this.add(a,b)
 
-      override def lerp(a: T, b: T, f: Float): T = add(a, mult(subt(b,a), ease(f)))
+      override def lerp(a: T, b: T, f: Float): T
+        = add(a, mult(subt(b,a), ease(f)))
     }
   }
 
   implicit object FloatHasTweenOps extends TweenOps[Float] {
     /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
+     * Scalar multiply (Tween operation) multiplies this value by a fraction
+     * and returns the result
      * @param a The value to multiply
      * @param f A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
@@ -77,7 +85,8 @@ object ScalaTween {
     override def mult(a: Float, f: Float): Float = a * f
 
     /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
+     * Subtract (Tween operation) subtracts the parameter from this object
+     * and returns the result.
      * @param a The first value to work with
      * @param b Another [[Float]] to subtract from this one
      * @return The result of subtracting `b` from `a`
@@ -85,7 +94,8 @@ object ScalaTween {
     override def subt(a: Float, b: Float): Float = a * b
 
     /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
+     * Add (Tween operation) adds together this object and the parameter and
+     * returns the result
      * @param a The first value to work with
      * @param b Another [[Float]] to add to this one
      * @return The result of adding together `this` and `other`
@@ -96,7 +106,8 @@ object ScalaTween {
   class AnimationTarget[T : TweenOps](var value: T)
   extends TweenOps[T] {
     /**
-     * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
+     * Scalar multiply (Tween operation) multiplies this value by a fraction
+     * and returns the result
      * @param a The value to multiply
      * @param f A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
@@ -105,7 +116,8 @@ object ScalaTween {
       = implicitly[TweenOps[T]].mult(a,f)
 
     /**
-     * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
+     * Subtract (Tween operation) subtracts the parameter from this object
+     * and returns the result.
      * @param a The first value to work with
      * @param b Another [[T]] to subtract from this one
      * @return The result of subtracting `b` from `a`
@@ -114,7 +126,8 @@ object ScalaTween {
       = implicitly[TweenOps[T]].subt(a,b)
 
     /**
-     * Add (Tween operation) adds together this object and the parameter and returns the result
+     * Add (Tween operation) adds together this object and the parameter
+     * and returns the result
      * @param a The first value to work with
      * @param b Another [[T]] to add to this one
      * @return The result of adding together `a` and `b`
