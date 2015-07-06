@@ -93,14 +93,16 @@ object ScalaTween {
     override def add(a: Float, b: Float): Float = a + b
   }
 
-  class AnimationTarget[T](var value: T)(implicit to: TweenOps[T]) extends TweenOps[T] {
+  class AnimationTarget[T : TweenOps](var value: T)
+  extends TweenOps[T] {
     /**
      * Scalar multiply (Tween operation) multiplies this value by a fraction and returns the result
      * @param a The value to multiply
      * @param f A [[Float]] value between 0 and 1, inclusive
      * @return a T scaled by multiplying it with the scalar `fraction` amount
      */
-    override def mult(a: T, f: Float): T = to.mult(a,f)
+    override def mult(a: T, f: Float): T
+      = implicitly[TweenOps[T]].mult(a,f)
 
     /**
      * Subtract (Tween operation) subtracts the parameter from this object and returns the result.
@@ -108,7 +110,8 @@ object ScalaTween {
      * @param b Another [[T]] to subtract from this one
      * @return The result of subtracting `b` from `a`
      */
-    override def subt(a: T, b: T): T = to.subt(a,b)
+    override def subt(a: T, b: T): T
+      = implicitly[TweenOps[T]].subt(a,b)
 
     /**
      * Add (Tween operation) adds together this object and the parameter and returns the result
@@ -116,7 +119,8 @@ object ScalaTween {
      * @param b Another [[T]] to add to this one
      * @return The result of adding together `a` and `b`
      */
-    override def add(a: T, b: T): T = to.add(a,b)
+    override def add(a: T, b: T): T
+      = implicitly[TweenOps[T]].add(a,b)
 
     def +(b: T): T = add(this.value, b)
     def -(b: T): T = subt(this.value,b)
