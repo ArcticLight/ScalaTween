@@ -36,6 +36,7 @@ object ScalaTween {
       override def add(a: Float, b: Float): Float = a + b
     }
 
+
     implicit object DoubleIsTweenOps extends TweenOps[Double] {
       override def mult(a: Double, b: Float): Double = a * b
       override def sub(a: Double, b: Double): Double = a - b
@@ -57,6 +58,7 @@ object ScalaTween {
    * @tparam T The raw type of the target, for which there are TweenOps available for it.
    */
   case class AnimationTarget[T: TweenOps](var target: T)
+  implicit def AnimationTargetIsItself[T](x: AnimationTarget[T]): T = x.target
 
   private def clamp(x: Float, min: Float, max: Float) = if (x < min) min else if (x > max) max else x
 
@@ -69,10 +71,10 @@ object ScalaTween {
     def ease(e: Float => Float): AnimationOps = new WithEase(e)
 
     private class WithEase(e: Float => Float) extends AnimationOps {
-      override val cycleDuration = super.cycleDuration
-      override val cycles = super.cycles
+      override val cycleDuration = AnimationOps.this.cycleDuration
+      override val cycles = AnimationOps.this.cycles
       override def seekTo(utime:Float): Unit = {
-        super.seekTo(e(clamp(utime, 0, super.duration)/super.duration)*super.duration)
+        AnimationOps.this.seekTo(e(clamp(utime, 0, super.duration)/super.duration)*super.duration)
       }
     }
   }
@@ -95,8 +97,8 @@ object ScalaTween {
     override val cycleDuration = timeline.foldLeft(0f)((accum, elem) => accum + elem.duration)
 
     private[this] val dtable = {
-      val t = Seq(0f) :+ timeline.scanLeft[Float,Float](0)((acc, x) => acc + x.duration)
-      timeline.zipWithIndex.map({case (x,i:Int) => (t(i), t(i)+x.duration)})
+      val t: Seq[Float] = Seq[Float](0f) ++ timeline.scanLeft[Float,Seq[Float]](0f)((acc, x) => acc+x.duration)
+      timeline.zipWithIndex.map({case (x,i:Int) => (t(i), t(i) + x.duration)})
     }
 
     private var currentTime: Float = 0
