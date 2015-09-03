@@ -92,6 +92,15 @@ object ScalaTween {
     }
   }
 
+  object Tween {
+    def apply[T: TweenOps](target: AnimationTarget[T],
+                            start: T,
+                            end: T,
+                            cycleDuration: Float = 1,
+                            cycles: Int = 1): Tween[T] =
+      new Tween[T](target, start, end, cycleDuration, cycles)
+  }
+
   class SeqTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
     require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
     override val cycleDuration = timeline.foldLeft(0f)((accum, elem) => accum + elem.duration)
