@@ -1,8 +1,5 @@
 package me.arcticlight.animations
 
-import scala.runtime.RichFloat
-
-
 object ScalaTween {
 
   /**
@@ -111,8 +108,15 @@ object ScalaTween {
     }
 
     private var currentTime: Float = 0
+
+    def update(utime: Float): Unit = {
+      this.currentTime += utime
+      seekTo(this.currentTime)
+    }
+
     override def seekTo(utime: Float): Unit = {
-      val htime = clamp(utime, 0, duration)%cycleDuration
+      this.currentTime = clamp(utime, 0, duration)
+      val htime = currentTime%cycleDuration
       timeline.zipWithIndex.dropWhile {
                 case (x,i) =>
                   val (startTime,_) = dtable(i)
@@ -143,7 +147,13 @@ object ScalaTween {
 
     private var currentTime: Float = 0
 
+    def update(utime: Float): Unit = {
+      this.currentTime += utime
+      seekTo(currentTime)
+    }
+
     override def seekTo(utime: Float): Unit = {
+      this.currentTime = clamp(utime, 0, duration)
       val htime = clamp(utime, 0, duration)%cycleDuration
       timeline.foreach{_.seekTo(htime)}
     }
