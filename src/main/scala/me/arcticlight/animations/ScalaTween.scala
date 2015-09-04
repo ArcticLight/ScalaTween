@@ -131,6 +131,12 @@ object ScalaTween {
     }
   }
 
+  object SeqTimeline {
+    def apply[A](timeline: A forSome { type A <: AnimationOps }*)
+                (cycles: Int = 1): SeqTimeline
+      = new SeqTimeline(timeline, cycles = cycles)
+  }
+
   class ParTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
     require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
     override val cycleDuration = timeline.maxBy(_.duration).duration
@@ -141,5 +147,11 @@ object ScalaTween {
       val htime = clamp(utime, 0, duration)%cycleDuration
       timeline.foreach{_.seekTo(htime)}
     }
+  }
+
+  object ParTimeline {
+    def apply[A](timeline: A forSome { type A <: AnimationOps }*)
+                (cycles: Int = 1): ParTimeline
+      = new ParTimeline(timeline, cycles = cycles)
   }
 }
