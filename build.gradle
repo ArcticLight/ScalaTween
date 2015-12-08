@@ -1,9 +1,17 @@
 apply plugin: 'scala'
+apply plugin: 'maven'
+
+group = 'me.arcticlight'
 
 repositories {
     mavenCentral()
+
+    maven {
+        url('http://clojars.org/repo')
+    }
 }
 
 dependencies {
     compile 'org.scala-lang:scala-library:2.11.7'
+    compile 'quil:processing-core:2.2.1'
 }
