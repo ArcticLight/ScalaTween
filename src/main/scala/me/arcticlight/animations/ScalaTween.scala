@@ -117,20 +117,24 @@ object ScalaTween {
     override def seekTo(utime: Float): Unit = {
       this.currentTime = clamp(utime, 0, duration)
       val htime = currentTime%cycleDuration
-      timeline.zipWithIndex.dropWhile {
-                case (x,i) =>
-                  val (startTime,_) = dtable(i)
-                  startTime <= utime
+      timeline.zipWithIndex
+            //.dropWhile {
+            //  case (x,i) =>
+            //    val (startTime,_) = dtable(i)
+            //    startTime <= utime
+            //}
+            //.takeWhile {
+            //  case (x,i) =>
+            //    val (_, endTime) = dtable(i)
+            //    utime <= endTime
+            //}
+              .filter { case (_, i) =>
+                val (startTime, endTime) = dtable(i)
+                startTime > utime && endTime < utime
               }
-              .takeWhile {
-                case (x,i) =>
-                  val (_, endTime) = dtable(i)
-                  utime <= endTime
-              }
-              .foreach {
-                case (x,i) =>
-                  val (startTime, _) = dtable(i)
-                  x.seekTo(htime - startTime)
+              .foreach { case (x,i) =>
+                val (startTime, _) = dtable(i)
+                x.seekTo(htime - startTime)
               }
     }
   }
