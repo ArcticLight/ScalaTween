@@ -128,7 +128,7 @@ object ScalaTween {
             //    val (_, endTime) = dtable(i)
             //    utime <= endTime
             //}
-              .filter { case (_, i) =>
+              .withFilter { case (_, i) =>
                 val (startTime, endTime) = dtable(i)
                 startTime > utime && endTime < utime
               }
