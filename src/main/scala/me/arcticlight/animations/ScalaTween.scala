@@ -110,8 +110,7 @@ object ScalaTween {
     private var currentTime: Float = 0
 
     def update(utime: Float): Unit = {
-      this.currentTime += utime
-      seekTo(this.currentTime)
+      seekTo(this.currentTime + utime)
     }
 
     override def seekTo(utime: Float): Unit = {
@@ -120,7 +119,7 @@ object ScalaTween {
       timeline.zipWithIndex.dropWhile {
                 case (x,i) =>
                   val (startTime,_) = dtable(i)
-                  startTime <= utime
+                  startTime <= currentTime
               }
               .takeWhile {
                 case (x,i) =>
@@ -148,8 +147,7 @@ object ScalaTween {
     private var currentTime: Float = 0
 
     def update(utime: Float): Unit = {
-      this.currentTime += utime
-      seekTo(currentTime)
+      seekTo(currentTime + utime)
     }
 
     override def seekTo(utime: Float): Unit = {
