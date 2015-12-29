@@ -85,7 +85,12 @@ object ScalaTween {
     lazy val looping: Boolean = cycles > 1
 
     def seekTo(utime: Float): Unit = {
-      target.target = implicitly[TweenOps[T]].interp(start, end, (clamp(utime, 0, duration)%cycleDuration)/cycleDuration)
+      target.target = implicitly[TweenOps[T]].interp(start, end, {
+        if(utime < 0) 0
+        else if (utime >= duration) 1
+        else if (utime > cycleDuration) (clamp(utime, 0, duration)%cycleDuration)/cycleDuration
+        else utime/cycleDuration
+      })
     }
   }
 
@@ -115,10 +120,17 @@ object ScalaTween {
 
     override def seekTo(utime: Float): Unit = {
       val oldTime = this.currentTime
-      val oldHtime = oldTime%cycleDuration
+      val oldHtime = {
+        if (oldTime > cycleDuration) (clamp(utime, 0, duration)%cycleDuration)/cycleDuration
+        else oldTime/cycleDuration
+      }
       this.currentTime = clamp(utime, 0, duration)
-      val htime = currentTime%cycleDuration
-      var hlist = if(currentTime - oldTime < 0) {
+      val htime = {
+        if (currentTime >= duration) 1
+        else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
+        else currentTime/cycleDuration
+      }
+      val hlist = if(currentTime - oldTime < 0) {
         timeline.zipWithIndex.dropWhile({
           case (x,i) =>
             val (_,endTime) = dtable(i)
@@ -170,7 +182,11 @@ object ScalaTween {
 
     override def seekTo(utime: Float): Unit = {
       this.currentTime = clamp(utime, 0, duration)
-      val htime = clamp(utime, 0, duration)%cycleDuration
+      val htime = {
+        if (currentTime >= duration) 1
+        else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
+        else currentTime/cycleDuration
+      }
       timeline.foreach{_.seekTo(htime)}
     }
   }
