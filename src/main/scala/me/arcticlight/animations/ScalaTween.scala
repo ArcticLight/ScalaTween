@@ -3,19 +3,19 @@ package me.arcticlight.animations
 object ScalaTween {
 
   /**
-   * TweenOps defines the verious bare-minimum operations that a type needs to have
-   * in order to have linear interpolation applied to it. Specifically, we need
-   * scalar multiplication, addition, and subtraction.
-   *
-   * In general, an implementor of TweenOps only needs to provide the mult, sub, and add operations.
-   *
-   * A default <code>interp()</code> implementation is provided, and <b>this method should be used</b>
-   * when performing interpolation with a [[TweenOps]], rather than constructing the default linear interpolation
-   * formula manually with mult, add, and sub. This is for those cases where the interpolation is NOT linear,
-   * such as when interpolating between color values, which requires a specific conversion in order to
-   * preserve variables such as brightness during animation.
-   * @tparam T The type that this TweenOps applies to
-   */
+    * TweenOps defines the verious bare-minimum operations that a type needs to have
+    * in order to have linear interpolation applied to it. Specifically, we need
+    * scalar multiplication, addition, and subtraction.
+    *
+    * In general, an implementor of TweenOps only needs to provide the mult, sub, and add operations.
+    *
+    * A default <code>interp()</code> implementation is provided, and <b>this method should be used</b>
+    * when performing interpolation with a [[TweenOps]], rather than constructing the default linear interpolation
+    * formula manually with mult, add, and sub. This is for those cases where the interpolation is NOT linear,
+    * such as when interpolating between color values, which requires a specific conversion in order to
+    * preserve variables such as brightness during animation.
+    * @tparam T The type that this TweenOps applies to
+    */
   trait TweenOps[T] extends Any {
     def mult(a: T, b: Float): T
 
@@ -49,11 +49,11 @@ object ScalaTween {
   }
 
   /**
-   * A generic *target* for Tween Operations that handles
-   * Tween Operations for an underlying value.
-   * @param target The target which is wrapped by this AnimationTarget
-   * @tparam T The raw type of the target, for which there are TweenOps available for it.
-   */
+    * A generic *target* for Tween Operations that handles
+    * Tween Operations for an underlying value.
+    * @param target The target which is wrapped by this AnimationTarget
+    * @tparam T The raw type of the target, for which there are TweenOps available for it.
+    */
   case class AnimationTarget[T: TweenOps](var target: T)
   implicit def AnimationTargetIsItself[T](x: AnimationTarget[T]): T = x.target
 
@@ -81,7 +81,7 @@ object ScalaTween {
                            val end: T,
                            override val cycleDuration: Float = 1,
                            override val cycles: Int = 1)
-  extends AnimationOps {
+    extends AnimationOps {
     lazy val looping: Boolean = cycles > 1
 
     def seekTo(utime: Float): Unit = {
@@ -91,10 +91,10 @@ object ScalaTween {
 
   object Tween {
     def apply[T: TweenOps](target: AnimationTarget[T],
-                            start: T,
-                            end: T,
-                            cycleDuration: Float = 1,
-                            cycles: Int = 1): Tween[T] =
+                           start: T,
+                           end: T,
+                           cycleDuration: Float = 1,
+                           cycles: Int = 1): Tween[T] =
       new Tween[T](target, start, end, cycleDuration, cycles)
   }
 
@@ -103,7 +103,7 @@ object ScalaTween {
     override val cycleDuration = timeline.foldLeft(0f)((accum, elem) => accum + elem.duration)
 
     private[this] val dtable = {
-      val t: Seq[Float] = Seq[Float](0f) ++ timeline.scanLeft[Float,Seq[Float]](0f)((acc, x) => acc+x.duration)
+      val t: Seq[Float] = timeline.scanLeft[Float,Seq[Float]](0f)((acc, x) => acc+x.duration)
       timeline.zipWithIndex.map({case (x,i:Int) => (t(i), t(i) + x.duration)})
     }
 
@@ -114,30 +114,48 @@ object ScalaTween {
     }
 
     override def seekTo(utime: Float): Unit = {
+      val oldTime = this.currentTime
+      val oldHtime = oldTime%cycleDuration
       this.currentTime = clamp(utime, 0, duration)
       val htime = currentTime%cycleDuration
-      timeline.zipWithIndex.dropWhile {
-                case (x,i) =>
-                  val (startTime,_) = dtable(i)
-                  startTime <= currentTime
-              }
-              .takeWhile {
-                case (x,i) =>
-                  val (_, endTime) = dtable(i)
-                  utime <= endTime
-              }
-              .foreach {
-                case (x,i) =>
-                  val (startTime, _) = dtable(i)
-                  x.seekTo(htime - startTime)
-              }
+      var hlist = if(currentTime - oldTime < 0) {
+        timeline.zipWithIndex.dropWhile({
+          case (x,i) =>
+            val (_,endTime) = dtable(i)
+            endTime < htime
+        })
+          .takeWhile({
+            case (x,i) =>
+              val (startTime, _) = dtable(i)
+              startTime <= oldHtime
+          }).reverse
+      } else {
+        timeline.zipWithIndex.dropWhile({
+          case (x,i) =>
+            val (_,endTime) = dtable(i)
+            endTime < oldHtime
+        })
+          .takeWhile({
+            case (x,i) =>
+              val (startTime, _) = dtable(i)
+              startTime <= htime
+          })
+      }
+      //if the time is heading backwards, proc the list backwards
+      //hlist = if(currentTime - oldTime < 0) hlist.reverse else hlist
+
+      hlist.foreach {
+        case (x,i) =>
+          val (startTime, _) = dtable(i)
+          x.seekTo(htime - startTime)
+      }
     }
   }
 
   object SeqTimeline {
     def apply[A](timeline: A forSome { type A <: AnimationOps }*)
                 (cycles: Int = 1): SeqTimeline
-      = new SeqTimeline(timeline, cycles = cycles)
+    = new SeqTimeline(timeline, cycles = cycles)
   }
 
   class ParTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
@@ -160,6 +178,6 @@ object ScalaTween {
   object ParTimeline {
     def apply[A](timeline: A forSome { type A <: AnimationOps }*)
                 (cycles: Int = 1): ParTimeline
-      = new ParTimeline(timeline, cycles = cycles)
+    = new ParTimeline(timeline, cycles = cycles)
   }
 }
