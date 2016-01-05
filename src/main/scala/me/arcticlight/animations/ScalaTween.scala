@@ -126,7 +126,7 @@ object ScalaTween {
       }
       this.currentTime = clamp(utime, 0, duration)
       val htime = {
-        if (currentTime >= duration) 1
+        if (currentTime >= duration) duration
         else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
         else currentTime/cycleDuration
       }
