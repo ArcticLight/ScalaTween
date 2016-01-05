@@ -183,7 +183,7 @@ object ScalaTween {
     override def seekTo(utime: Float): Unit = {
       this.currentTime = clamp(utime, 0, duration)
       val htime = {
-        if (currentTime >= duration) 1
+        if (currentTime >= duration) duration
         else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
         else currentTime/cycleDuration
       }
