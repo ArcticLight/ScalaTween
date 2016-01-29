@@ -1,5 +1,7 @@
 package me.arcticlight.animations
 
+import scala.language.{implicitConversions, existentials}
+
 object ScalaTween {
 
   /**
@@ -14,6 +16,7 @@ object ScalaTween {
     * formula manually with mult, add, and sub. This is for those cases where the interpolation is NOT linear,
     * such as when interpolating between color values, which requires a specific conversion in order to
     * preserve variables such as brightness during animation.
+    *
     * @tparam T The type that this TweenOps applies to
     */
   trait TweenOps[T] extends Any {
@@ -51,6 +54,7 @@ object ScalaTween {
   /**
     * A generic *target* for Tween Operations that handles
     * Tween Operations for an underlying value.
+    *
     * @param target The target which is wrapped by this AnimationTarget
     * @tparam T The raw type of the target, for which there are TweenOps available for it.
     */
@@ -86,7 +90,7 @@ object ScalaTween {
 
     def seekTo(utime: Float): Unit = {
       target.target = implicitly[TweenOps[T]].interp(start, end, {
-        if(utime < 0) 0
+        if(utime <= 0) 0
         else if (utime >= duration) 1
         else if (utime > cycleDuration) (clamp(utime, 0, duration)%cycleDuration)/cycleDuration
         else utime/cycleDuration
@@ -121,14 +125,15 @@ object ScalaTween {
     override def seekTo(utime: Float): Unit = {
       val oldTime = this.currentTime
       val oldHtime = {
-        if (oldTime > cycleDuration) (clamp(utime, 0, duration)%cycleDuration)/cycleDuration
-        else oldTime/cycleDuration
+        if (oldTime >= duration) cycleDuration
+        else if (oldTime > cycleDuration) clamp(utime, 0, duration)%cycleDuration
+        else oldTime
       }
       this.currentTime = clamp(utime, 0, duration)
       val htime = {
-        if (currentTime >= duration) 1
-        else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
-        else currentTime/cycleDuration
+        if (currentTime >= duration) cycleDuration
+        else if (currentTime > cycleDuration) currentTime%cycleDuration
+        else currentTime
       }
       val hlist = if(currentTime - oldTime < 0) {
         timeline.zipWithIndex.dropWhile({
@@ -183,9 +188,9 @@ object ScalaTween {
     override def seekTo(utime: Float): Unit = {
       this.currentTime = clamp(utime, 0, duration)
       val htime = {
-        if (currentTime >= duration) 1
-        else if (currentTime > cycleDuration) (currentTime%cycleDuration)/cycleDuration
-        else currentTime/cycleDuration
+        if (currentTime >= duration) cycleDuration
+        else if (currentTime > cycleDuration) currentTime%cycleDuration
+        else currentTime
       }
       timeline.foreach{_.seekTo(htime)}
     }
