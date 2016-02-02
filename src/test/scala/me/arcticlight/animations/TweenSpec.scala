@@ -12,6 +12,6 @@ class TweenSpec extends fixture.FlatSpec with Matchers {
   }
 
   "A Tween" should "interpolate a Float from 0->1" in { x =>
-    Tween(x, 0f, 1f).seekTo(1) shouldBe 1f
+    new Tween(x, 0f, 1f).seekTo(1) shouldBe 1f
   }
 }
