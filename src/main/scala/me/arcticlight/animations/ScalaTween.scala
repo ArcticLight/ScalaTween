@@ -58,9 +58,13 @@ object ScalaTween {
     * @param target The target which is wrapped by this AnimationTarget
     * @tparam T The raw type of the target, for which there are TweenOps available for it.
     */
-  case class AnimationTarget[T: TweenOps](var target: T)
+  class AnimationTarget[T: TweenOps](var target: T)
   implicit def AnimationTargetIsItself[T](x: AnimationTarget[T]): T = x.target
 
+  object AnimationTarget {
+    def apply[T: TweenOps](target: T): AnimationTarget[T] = new AnimationTarget(target)
+  }
+  
   private def clamp(x: Float, min: Float, max: Float) = if (x < min) min else if (x > max) max else x
 
   trait AnimationOps {
