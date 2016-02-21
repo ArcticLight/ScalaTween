@@ -149,7 +149,36 @@ object ScalaTween {
 
     private var currentTime: Float = 0
 
-    override def seekTo(utime: Float): Unit = ???
+    override def seekTo(utime: Float): Unit = {
+      val qCurrentTime = currentTime
+      this.currentTime = clamp(utime, 0, duration)
+      val delta = currentTime - qCurrentTime
+      if(delta == 0) return
+
+      val lowTime = if (delta < 0) currentTime else qCurrentTime
+      val highTime = if (delta < 0) qCurrentTime else currentTime
+
+      val updateList = timeline.zipWithIndex.dropWhile({
+        //Drop entries whose time is less than the lowTime;
+        //they ended earlier than the region we care about
+        case (x,i) =>
+          val (_, endTime) = dtable(i)
+          endTime < lowTime
+      }).takeWhile({
+        //Take only the entries whose startTime is less than
+        //highTime; they started on or before we close the
+        //time region we care about
+        case (x,i) =>
+          val (startTime, _) = dtable(i)
+          startTime <= highTime
+      })
+
+      updateList.foreach {
+        case (x,i) =>
+          val (startTime, _) = dtable(i)
+          x.seekTo(clamp(currentTime - startTime, 0, x.duration))
+      }
+    }
   }
 
   object SeqTimeline {
@@ -171,70 +200,4 @@ object ScalaTween {
   object ParTimeline {
     def apply[A](timeline: A forSome { type A <: Animatable }*): ParTimeline = new ParTimeline(timeline)
   }
-
-  /*
-  TODO: Finish porting these code sections
-
-  class SeqTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
-    require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
-    override val cycleDuration = timeline.foldLeft(0f)((accum, elem) => accum + elem.duration)
-
-    private[this] val dtable = {
-      val t: Seq[Float] = timeline.scanLeft[Float,Seq[Float]](0f)((acc, x) => acc+x.duration)
-      timeline.zipWithIndex.map({case (x,i:Int) => (t(i), t(i) + x.duration)})
-    }
-
-    private var currentTime: Float = 0
-
-    def update(utime: Float): Unit = {
-      seekTo(this.currentTime + utime)
-    }
-
-    override def seekTo(utime: Float): Unit = {
-      val oldTime = this.currentTime
-      val oldHtime = {
-        if (oldTime >= duration) cycleDuration
-        else if (oldTime > cycleDuration) clamp(utime, 0, duration)%cycleDuration
-        else oldTime
-      }
-      this.currentTime = clamp(utime, 0, duration)
-      val htime = {
-        if (currentTime >= duration) cycleDuration
-        else if (currentTime > cycleDuration) currentTime%cycleDuration
-        else currentTime
-      }
-      val hlist = if(currentTime - oldTime < 0) {
-        timeline.zipWithIndex.dropWhile({
-          case (x,i) =>
-            val (_,endTime) = dtable(i)
-            endTime < htime
-        })
-          .takeWhile({
-            case (x,i) =>
-              val (startTime, _) = dtable(i)
-              startTime <= oldHtime
-          }).reverse
-      } else {
-        timeline.zipWithIndex.dropWhile({
-          case (x,i) =>
-            val (_,endTime) = dtable(i)
-            endTime < oldHtime
-        })
-          .takeWhile({
-            case (x,i) =>
-              val (startTime, _) = dtable(i)
-              startTime <= htime
-          })
-      }
-      //if the time is heading backwards, proc the list backwards
-      //hlist = if(currentTime - oldTime < 0) hlist.reverse else hlist
-
-      hlist.foreach {
-        case (x,i) =>
-          val (startTime, _) = dtable(i)
-          x.seekTo(htime - startTime)
-      }
-    }
-  }
-  */
 }
