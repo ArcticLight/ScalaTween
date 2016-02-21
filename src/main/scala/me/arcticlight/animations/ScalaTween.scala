@@ -131,7 +131,7 @@ object ScalaTween {
     def apply[T: Interpolatable](target: AnimationTarget[T],
                                  start: T,
                                  end: T,
-                                 duration: Float): Tween[T] = new Tween(target, start, end, duration)
+                                 duration: Float = 1f): Tween[T] = new Tween(target, start, end, duration)
   }
 
   class SeqTimeline(val timeline: Seq[_ <: Animatable]) extends Animatable {
