@@ -26,7 +26,7 @@ class TweenSpec extends FlatSpec with Matchers {
     t.seekTo(.5f)
     v.target shouldBe   .5f
     t.seekTo(1f)
-    v.target shouldBe   .1f
+    v.target shouldBe   1f
   }
 
   "A SeqTimeline" should "interpolate (0,0,0) to (1,.5,0) when seeked halfway" in {
@@ -44,5 +44,80 @@ class TweenSpec extends FlatSpec with Matchers {
     v1.target shouldBe   1f
     v2.target shouldBe   .5f
     v3.target shouldBe   0f
+  }
+
+  it should "interpolate (0,0,0) to (1,1,.5) when seeked to 5/6ths" in {
+    val v1 = AnimationTarget(0f)
+    val v2 = AnimationTarget(0f)
+    val v3 = AnimationTarget(0f)
+    val t = SeqTimeline(
+      Tween(v1, 0f, 1f),
+      Tween(v2, 0f, 1f),
+      Tween(v3, 0f, 1f)
+    )
+
+    t.seekTo(t.duration * (5f/6f))
+
+    v1.target shouldBe   1f
+    v2.target shouldBe   1f
+    v3.target shouldBe   .5f
+  }
+
+  it should "interpolate (0,0,0) to (1,1,1) and back to (0,0,0) when seeked 0->1->0" in {
+    val v1 = AnimationTarget(0f)
+    val v2 = AnimationTarget(0f)
+    val v3 = AnimationTarget(0f)
+    val t = SeqTimeline(
+      Tween(v1, 0f, 1f),
+      Tween(v2, 0f, 1f),
+      Tween(v3, 0f, 1f)
+    )
+
+    t.seekTo(t.duration)
+
+    v1.target shouldBe   1f
+    v2.target shouldBe   1f
+    v3.target shouldBe   1f
+
+    t.seekTo(0f)
+
+    v1.target shouldBe 0f
+    v2.target shouldBe 0f
+    v3.target shouldBe 0f
+  }
+
+  it should "interpolate (0,0,0) to (1,1,0) on an edge" in {
+    val v1 = AnimationTarget(0f)
+    val v2 = AnimationTarget(0f)
+    val v3 = AnimationTarget(0f)
+    val t = SeqTimeline(
+      Tween(v1, 0f, 1f),
+      Tween(v2, 0f, 1f),
+      Tween(v3, 0f, 1f)
+    )
+
+    t.seekTo(t.duration/3f*2f)
+
+    v1.target shouldBe 1f
+    v2.target shouldBe 1f
+    v3.target shouldBe 0f
+  }
+
+  it should "interpolate (0,0,0)->(1,1,0)->(1,0,0) on animation edges" in {
+    val v1 = AnimationTarget(0f)
+    val v2 = AnimationTarget(0f)
+    val v3 = AnimationTarget(0f)
+    val t = SeqTimeline(
+      Tween(v1, 0f, 1f),
+      Tween(v2, 0f, 1f),
+      Tween(v3, 0f, 1f)
+    )
+
+    t.seekTo(t.duration/3f*2f)
+    t.seekTo(t.duration/3f)
+    
+    v1.target shouldBe 1f
+    v2.target shouldBe 0f
+    v3.target shouldBe 0f
   }
 }
