@@ -5,111 +5,175 @@ import scala.language.{implicitConversions, existentials}
 object ScalaTween {
 
   /**
-    * TweenOps defines the verious bare-minimum operations that a type needs to have
-    * in order to have linear interpolation applied to it. Specifically, we need
-    * scalar multiplication, addition, and subtraction.
-    *
-    * In general, an implementor of TweenOps only needs to provide the mult, sub, and add operations.
-    *
-    * A default <code>interp()</code> implementation is provided, and <b>this method should be used</b>
-    * when performing interpolation with a [[TweenOps]], rather than constructing the default linear interpolation
-    * formula manually with mult, add, and sub. This is for those cases where the interpolation is NOT linear,
-    * such as when interpolating between color values, which requires a specific conversion in order to
-    * preserve variables such as brightness during animation.
-    *
-    * @tparam T The type that this TweenOps applies to
+    * Trait which defines scalar multiplication and vector addition for a type.
+    * Any type which has these operations (and can therefore define VectorLike)
+    * can be automatically turned into an Interpolatable.
     */
-  trait TweenOps[T] extends Any {
+  trait VectorLike[T] extends Interpolatable[T] {
+    /**
+      * Defines Scalar Multiplication on a [[VectorLike]].
+      *
+      * Basically this should be the result of multiplying your type [[T]] by a Float.
+      * So if I want <code>[[T]] * 0.36</code> that should have some meaning for your type.
+      *
+      * Additionally, it is <strong>an important implementation detail</strong> that
+      * <code>add([[T]], mult([[T]], -1)) == Zero</code> (for whatever kind of object Zero is in [[T]]).
+      *
+      *
+      * @param a The [[T]] to scale
+      * @param b The float to scale by.
+      * @return The new [[T]]
+      */
     def mult(a: T, b: Float): T
 
-    def sub(a: T, b: T): T
-
+    /**
+      * Defines the addition of two objects of type [[T]]
+      * @param a The first object to add
+      * @param b The second object to add
+      * @return <code>a + b</code>, or whatever that means for your type.
+      */
     def add(a: T, b: T): T
 
-    def interp(a: T, b: T, much: Float) = add(a, mult(sub(b,a), much))
+    override def interp(a: T, b: T, much: Float): T = add(a, mult(add(a,mult(b,-1)),much))
   }
 
-  object TweenOps {
-    implicit object FloatIsTweenOps extends TweenOps[Float] {
+  /**
+    * Defines the (linear) interpolation method, <code>interp(a, b, much)</code> for a type [[T]].
+    *
+    * @tparam T The type that has the interpolation ability
+    */
+  trait Interpolatable[T] {
+    def interp(a: T, b: T, much: Float): T
+  }
+
+  object DefaultInterpolations {
+    implicit object FloatIsVectorLike extends VectorLike[Float] {
       override def mult(a: Float, b: Float): Float = a * b
-      override def sub(a: Float, b: Float): Float = a - b
       override def add(a: Float, b: Float): Float = a + b
     }
 
 
-    implicit object DoubleIsTweenOps extends TweenOps[Double] {
+    implicit object DoubleIsVectorLike extends VectorLike[Double] {
       override def mult(a: Double, b: Float): Double = a * b
-      override def sub(a: Double, b: Double): Double = a - b
       override def add(a: Double, b: Double): Double = a + b
     }
 
     //The default behavior is to use rounding when interpolating integers.
-    implicit object IntIsTweenOpsWithRounding extends TweenOps[Int] {
+    implicit object IntIsVectorLikeWithRounding extends VectorLike[Int] {
       override def mult(a: Int, b: Float): Int = Math.round(a * b)
-      override def sub(a: Int, b: Int): Int = a - b
       override def add(a: Int, b: Int): Int = a + b
     }
   }
 
   /**
-    * A generic *target* for Tween Operations that handles
-    * Tween Operations for an underlying value.
+    * A generic target for Tween operations. Carries a var of the underlying value
+    * so that the value can be manipulated by Tweens which only have a reference
+    * to the AnimationTarget.
     *
-    * @param target The target which is wrapped by this AnimationTarget
-    * @tparam T The raw type of the target, for which there are TweenOps available for it.
+    * This probably makes more sense with an example; you use AnimationTarget like this:
+    * <code>
+    *   val xPosition = AnimationTarget(0f) //Type is AnimationTarget[Float]
+    *
+    *   val tween = Tween(xPosition, 0f, 1f) //Tween from 0 -> 1
+    *   tween.seek(.5) //Update the tween to be exactly half executed; the value of xPosition is now .5
+    * </code>
+    *
+    * @param target The thing which is the subject of the target
+    * @tparam T The type of the target
     */
-  class AnimationTarget[T: TweenOps](var target: T)
+  class AnimationTarget[T: Interpolatable](var target: T)
   implicit def AnimationTargetIsItself[T](x: AnimationTarget[T]): T = x.target
-
-  object AnimationTarget {
-    def apply[T: TweenOps](target: T): AnimationTarget[T] = new AnimationTarget(target)
+  object AnimationTarget{
+    def apply[T: Interpolatable](target: T): AnimationTarget[T] = new AnimationTarget(target)
   }
-  
-  private def clamp(x: Float, min: Float, max: Float) = if (x < min) min else if (x > max) max else x
 
-  trait AnimationOps {
-    val cycleDuration: Float
-    val cycles: Int
+  /**
+    * Trait [[Animatable]] abstracts away the bare minimum functionality required to animate something.
+    * An animation can be seeked and has a duration.
+    *
+    * The trait also defines a universal operation for applying an easing to an animation: the ease function
+    * is sealed and applies an easing to the underlying Animatable's seekTo function.
+    */
+  trait Animatable {
+    /**
+      * The total duration of this Animatable. Negative numbers are not allowed.
+      *
+      * In the future, PositiveInfinity might be allowed in order to allow arbitrarily repeating
+      * animations, but currently this is not allowed.
+      */
+    val duration: Float
+
+    /**
+      * Seek to a specific point in this animation, given as a float.
+      * @param utime The exact point in time to seek to.
+      */
     def seekTo(utime: Float): Unit
-    def duration: Float = cycleDuration * cycles
+    sealed def ease(e: (Float, Float, Float, Float) => Float): Animatable = new WithEase(e)
 
-    def ease(e: Float => Float): AnimationOps = new WithEase(e)
-
-    private class WithEase(e: Float => Float) extends AnimationOps {
-      override val cycleDuration = AnimationOps.this.cycleDuration
-      override val cycles = AnimationOps.this.cycles
-      override def seekTo(utime:Float): Unit = {
-        AnimationOps.this.seekTo(e(clamp(utime, 0, super.duration)/super.duration)*super.duration)
+    private class WithEase(e: (Float, Float, Float, Float) => Float) extends Animatable {
+      override val duration: Float = Animatable.this.duration
+      override def seekTo(utime: Float): Unit = {
+        Animatable.this.seekTo(e(utime, 0, duration, duration))
       }
     }
   }
 
-  class Tween[T: TweenOps](val target: AnimationTarget[T],
-                           val start: T,
-                           val end: T,
-                           override val cycleDuration: Float = 1,
-                           override val cycles: Int = 1)
-    extends AnimationOps {
-    lazy val looping: Boolean = cycles > 1
-
+  class Tween[T: Interpolatable](val target: AnimationTarget[T],
+                                 val start: T,
+                                 val end: T,
+                                 override val duration: Float = 1f) extends Animatable {
     def seekTo(utime: Float): Unit = {
-      target.target = implicitly[TweenOps[T]].interp(start, end, {
-        if(utime <= 0) 0
-        else if (utime >= duration) 1
-        else if (utime > cycleDuration) (clamp(utime, 0, duration)%cycleDuration)/cycleDuration
-        else utime/cycleDuration
-      })
+      target.target = implicitly[Interpolatable[T]].interp(start, end, utime/duration)
     }
   }
 
   object Tween {
-    def apply[T: TweenOps](target: AnimationTarget[T],
-                           start: T,
-                           end: T,
-                           cycleDuration: Float = 1,
-                           cycles: Int = 1): Tween[T] =
-      new Tween[T](target, start, end, cycleDuration, cycles)
+    def apply[T: Interpolatable](target: AnimationTarget[T],
+                                 start: T,
+                                 end: T,
+                                 duration: Float): Tween[T] = new Tween(target, start, end, duration)
   }
+
+  class SeqTimeline(val timeline: Seq[_ <: Animatable]) extends Animatable {
+    require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
+    override val duration = timeline.foldLeft(0f)((accum, element) => accum + element.duration)
+
+    //dtable: Build a table of the start and end times of every animation in the timelines.
+    //Speeds up future calculations.
+    private[this] lazy val dtable = {
+      val t: Seq[Float] = timeline.scanLeft[Float,Seq[Float]](0f)((accum, element) => accum + element.duration)
+      timeline.zipWithIndex.map({
+        case (x,i:Int) => (t(i), t(i) + x.duration)
+      })
+    }
+
+    private var currentTime: Float = 0
+
+    override def seekTo(utime: Float): Unit = ???
+  }
+
+  object SeqTimeline {
+    def apply[A](timeline: A forSome { type A <: Animatable }*): SeqTimeline = new SeqTimeline(timeline)
+  }
+
+
+  class ParTimeline(val timeline: Seq[_ <: Animatable]) extends Animatable {
+    require(timeline.hasDefiniteSize, "Timeline Seq must have definite size")
+    override val duration = timeline.maxBy(_.duration).duration
+
+    override def seekTo(utime: Float): Unit = {
+      timeline.foreach(x =>
+        x.seekTo(clamp(utime, 0, x.duration))
+      )
+    }
+  }
+
+  object ParTimeline {
+    def apply[A](timeline: A forSome { type A <: Animatable }*): ParTimeline = new ParTimeline(timeline)
+  }
+
+  /*
+  TODO: Finish porting these code sections
 
   class SeqTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
     require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
@@ -172,37 +236,5 @@ object ScalaTween {
       }
     }
   }
-
-  object SeqTimeline {
-    def apply[A](timeline: A forSome { type A <: AnimationOps }*)
-                (cycles: Int = 1): SeqTimeline
-    = new SeqTimeline(timeline, cycles = cycles)
-  }
-
-  class ParTimeline(val timeline: Seq[_ <: AnimationOps], override val cycles: Int = 1) extends AnimationOps {
-    require(timeline.hasDefiniteSize, "The Timeline Seq must be of finite size")
-    override val cycleDuration = timeline.maxBy(_.duration).duration
-
-    private var currentTime: Float = 0
-
-    def update(utime: Float): Unit = {
-      seekTo(currentTime + utime)
-    }
-
-    override def seekTo(utime: Float): Unit = {
-      this.currentTime = clamp(utime, 0, duration)
-      val htime = {
-        if (currentTime >= duration) cycleDuration
-        else if (currentTime > cycleDuration) currentTime%cycleDuration
-        else currentTime
-      }
-      timeline.foreach{_.seekTo(htime)}
-    }
-  }
-
-  object ParTimeline {
-    def apply[A](timeline: A forSome { type A <: AnimationOps }*)
-                (cycles: Int = 1): ParTimeline
-    = new ParTimeline(timeline, cycles = cycles)
-  }
+  */
 }
