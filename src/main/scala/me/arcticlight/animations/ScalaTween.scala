@@ -34,7 +34,7 @@ object ScalaTween {
       */
     def add(a: T, b: T): T
 
-    override def interp(a: T, b: T, much: Float): T = add(a, mult(add(a,mult(b,-1)),much))
+    override def interp(a: T, b: T, much: Float): T = add(a, mult(add(b,mult(a,-1)),much))
   }
 
   /**
@@ -108,7 +108,7 @@ object ScalaTween {
       * @param utime The exact point in time to seek to.
       */
     def seekTo(utime: Float): Unit
-    sealed def ease(e: (Float, Float, Float, Float) => Float): Animatable = new WithEase(e)
+    final def ease(e: (Float, Float, Float, Float) => Float): Animatable = new WithEase(e)
 
     private class WithEase(e: (Float, Float, Float, Float) => Float) extends Animatable {
       override val duration: Float = Animatable.this.duration
